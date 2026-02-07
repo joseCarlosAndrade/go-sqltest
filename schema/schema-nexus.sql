@@ -1,7 +1,7 @@
-CREATE DATABASE IF NOT EXISTS test;
+-- CREATE DATABASE IF NOT EXISTS test;
 
-CREATE DATABASE IF NOT EXISTS nexus;
-USE nexus;
+-- CREATE DATABASE IF NOT EXISTS nexus;
+-- USE nexus;
 
 CREATE TABLE companies (
 	id char(36) NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE configs (
 -- INSERT TEST DATA --TODO: ADD THE REAL CONTAINER CONNECTION HERE
 INSERT INTO companies (id, db_name, db_write_connection, db_read_connection) 
 VALUES
-('123', 'test', 'root:password@tcp(localhost:3306)/pricing', 'root:password@tcp(localhost:3306)/pricing');
+('xxxxxxx', 'placeholder', 'root:password@tcp(localhost:3306)/pricing', 'root:password@tcp(localhost:3306)/pricing');
 
 INSERT INTO configs (config_key, config_value)
 VALUES
