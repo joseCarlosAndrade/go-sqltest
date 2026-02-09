@@ -19,7 +19,7 @@ CREATE TABLE configs (
 	CONSTRAINT configs_pkey PRIMARY KEY (config_key)
 );
 
--- INSERT TEST DATA --TODO: ADD THE REAL CONTAINER CONNECTION HERE
+-- PALCEHOLDER DATA
 INSERT INTO companies (id, db_name, db_write_connection, db_read_connection) 
 VALUES
 ('xxxxxxx', 'placeholder', 'root:password@tcp(localhost:3306)/pricing', 'root:password@tcp(localhost:3306)/pricing');

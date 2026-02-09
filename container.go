@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/joseCarlosAndrade/go-sqltest/storage"
 	"github.com/orasis-holding/pricing-go-swiss-army-lib/nexus"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/mysql"
@@ -17,6 +18,24 @@ type PopulateTable struct {
 	Columns []string
 	Data    [][]any
 }
+
+type SeedStrategy uint
+
+const (
+	DBName string = "pricingtest"
+)
+
+const (
+	// PopulateEmpty wont seed the pricing database at all. usefull for testing insertion operations
+	PopulateEmpty SeedStrategy = iota
+
+	// PopulateDefault will seed the pricing database with the default populate script defined at: TODO
+	PopulateDefault
+
+	// PopulateCustom will seed the pricing database with the custom populate data configured with
+	//   sqltest.WithPopulateData()
+	PopulateCustom
+)
 
 type TestInstance struct {
 	connString string // connString to mysql instance
@@ -34,7 +53,9 @@ type TestInstance struct {
 	// cpoolInstance     *cpool.Factory
 
 	shouldMockPricing   bool
+	seedStategy         SeedStrategy
 	pricingPopulateData []PopulateTable
+	storage *storage.Storage
 }
 
 func NewPopulate(tableName string, columns ...string) *PopulateTable {
@@ -55,6 +76,12 @@ func (ti *TestInstance) SetupTest(ctx context.Context, t *testing.T) error {
 	err := ti.setupContainer(ctx, t)
 	if err != nil {
 		return fmt.Errorf("setup test failed: %w", err)
+	}
+
+	// generate a client instance
+	err = ti.setupStorageConnection(ctx, t )
+	if err != nil {
+		return fmt.Errorf("could not connect to container: %w", err)
 	}
 
 	if ti.shouldMockNexus {
@@ -91,6 +118,18 @@ func (ti *TestInstance) SetupTest(ctx context.Context, t *testing.T) error {
 	return nil
 }
 
+func (ti * TestInstance) CleanUp(ctx context.Context, t * testing.T) {
+	if err := testcontainers.TerminateContainer(ti.container); err !=nil {
+		t.Logf("failed to terminate container: %s", err.Error())
+	}
+
+	if ti.storage != nil {
+		if err := ti.storage.Close(); err != nil {
+			t.Logf("failed to cleanup myqsl connection: %s", err.Error())
+		}
+	}
+}
+
 // SetupContainer setups a mysql container with the defaul schema in schema/
 func (ti *TestInstance) setupContainer(ctx context.Context, t *testing.T) error {
 	schema := "default.sql"
@@ -101,16 +140,11 @@ func (ti *TestInstance) setupContainer(ctx context.Context, t *testing.T) error 
 
 	mysqlContainer, err := mysql.Run(ctx,
 		"mysql:8.0.36",
-		mysql.WithDatabase("pricingtest"),
+		mysql.WithDatabase(DBName),
 		mysql.WithUsername("root"),
 		mysql.WithPassword("password"),
 		mysql.WithScripts(filepath.Join("schema", schema)))
 
-	t.Cleanup(func() {
-		if err := testcontainers.TerminateContainer(mysqlContainer); err != nil {
-			t.Logf("failed to termiante container: %s", err.Error())
-		}
-	})
 
 	if err != nil {
 		t.Logf("failed to start container: %s", err.Error())
@@ -126,11 +160,21 @@ func (ti *TestInstance) setupContainer(ctx context.Context, t *testing.T) error 
 		return err
 	}
 
-	time.Sleep(2*time.Second) // sleep a bit to give proper container init
+	time.Sleep(2 * time.Second) // sleep a bit to give proper container init
 
 	return nil
 }
 
+func (ti *TestInstance) setupStorageConnection(ctx context.Context, t *testing.T) error {
+	storage, err := storage.NewStorage(ctx, ti.connString)
+	if err != nil {
+		return err
+	}
+
+	ti.storage = storage
+
+	return nil
+}
 
 func (ti *TestInstance) initNexusInstance(ctx context.Context, t *testing.T) (*nexus.Nexus, error) {
 	if ti.container == nil {
@@ -150,8 +194,13 @@ func (ti *TestInstance) initNexusInstance(ctx context.Context, t *testing.T) (*n
 	return nn, nil
 }
 
-func (ti *TestInstance) seedNexus(ctx context.Context, t*testing.T) error {
-	if err := ti.insertNexusCompanyID(ctx, t); err != nil {
+func (ti *TestInstance) seedNexus(ctx context.Context, t *testing.T) error {
+	if err := ti.storage.Ping(ctx); err != nil {
+		return fmt.Errorf("ping failed: %w", err)
+	}
+
+	if err := ti.insertNexusCompanyID(ctx); err != nil {
+
 		return err
 	}
 
@@ -162,8 +211,8 @@ func (ti *TestInstance) seedNexus(ctx context.Context, t*testing.T) error {
 	return nil
 }
 
-func (ti *TestInstance) insertNexusCompanyID(ctx context.Context, t *testing.T) error {
-	return nil
+func (ti *TestInstance) insertNexusCompanyID(ctx context.Context) error {
+	return ti.storage.InsertNexusCompany(ctx, ti.nexusCompanyID, ti.connString, DBName)
 }
 
 func (ti *TestInstance) populateNexusConfig(ctx context.Context, t *testing.T) error {
@@ -186,7 +235,7 @@ func (ti *TestInstance) seedPricing(ctx context.Context, t *testing.T) error {
 
 	// CHECK IF USER PASSED POULATION DATA
 	//	IF NOT, USE DEFAULT FOR THIS MIGRATION
-	
+
 	// apply everyuthing
 
 	return nil
