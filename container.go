@@ -15,7 +15,7 @@ import (
 type PopulateTable struct {
 	Name    string
 	Columns []string
-	Data    [][]string
+	Data    [][]any
 }
 
 type TestInstance struct {
@@ -42,11 +42,11 @@ func NewPopulate(tableName string, columns ...string) *PopulateTable {
 	return &PopulateTable{
 		Name:    tableName,
 		Columns: columns,
-		Data:    make([][]string, 0),
+		Data:    make([][]any, 0),
 	}
 }
 
-func (p *PopulateTable) Insert(values ...string) *PopulateTable { // test: maybe values ...any ?
+func (p *PopulateTable) Insert(values ...any) *PopulateTable { // test: maybe values ...any ?
 	p.Data = append(p.Data, values)
 	return p
 }
@@ -58,6 +58,7 @@ func (ti *TestInstance) SetupTest(ctx context.Context, t *testing.T) error {
 	}
 
 	if ti.shouldMockNexus {
+		// init nexus instance
 		nn, err := ti.initNexusInstance(ctx, t)
 		if err != nil {
 			return fmt.Errorf("init nexus instance failed: %w", err)
