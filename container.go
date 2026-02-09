@@ -47,7 +47,7 @@ type TestInstance struct {
 
 	shouldMockNexus bool
 	nexusCompanyID  string
-	nexusConfigData []PopulateTable // populates the config table in nexus (use only when needed)
+	nexusConfigData PopulateTable // populates the config table in nexus (use only when needed)
 	nexusInstance   *nexus.Nexus
 	// shouldReturnCpool bool
 	// cpoolInstance     *cpool.Factory
@@ -55,7 +55,7 @@ type TestInstance struct {
 	shouldMockPricing   bool
 	seedStategy         SeedStrategy
 	pricingPopulateData []PopulateTable
-	storage *storage.Storage
+	storage             *storage.Storage
 }
 
 func NewPopulate(tableName string, columns ...string) *PopulateTable {
@@ -79,7 +79,7 @@ func (ti *TestInstance) SetupTest(ctx context.Context, t *testing.T) error {
 	}
 
 	// generate a client instance
-	err = ti.setupStorageConnection(ctx, t )
+	err = ti.setupStorageConnection(ctx, t)
 	if err != nil {
 		return fmt.Errorf("could not connect to container: %w", err)
 	}
@@ -94,7 +94,7 @@ func (ti *TestInstance) SetupTest(ctx context.Context, t *testing.T) error {
 		ti.nexusInstance = nn
 
 		// populate nexus
-		if err := ti.seedNexus(ctx, t); err != nil {
+		if err := ti.seedNexus(ctx); err != nil {
 			return fmt.Errorf("seed nexus failed: %w", err)
 		}
 
@@ -118,8 +118,8 @@ func (ti *TestInstance) SetupTest(ctx context.Context, t *testing.T) error {
 	return nil
 }
 
-func (ti * TestInstance) CleanUp(ctx context.Context, t * testing.T) {
-	if err := testcontainers.TerminateContainer(ti.container); err !=nil {
+func (ti *TestInstance) CleanUp(ctx context.Context, t *testing.T) {
+	if err := testcontainers.TerminateContainer(ti.container); err != nil {
 		t.Logf("failed to terminate container: %s", err.Error())
 	}
 
@@ -144,7 +144,6 @@ func (ti *TestInstance) setupContainer(ctx context.Context, t *testing.T) error 
 		mysql.WithUsername("root"),
 		mysql.WithPassword("password"),
 		mysql.WithScripts(filepath.Join("schema", schema)))
-
 
 	if err != nil {
 		t.Logf("failed to start container: %s", err.Error())
@@ -194,7 +193,7 @@ func (ti *TestInstance) initNexusInstance(ctx context.Context, t *testing.T) (*n
 	return nn, nil
 }
 
-func (ti *TestInstance) seedNexus(ctx context.Context, t *testing.T) error {
+func (ti *TestInstance) seedNexus(ctx context.Context) error {
 	if err := ti.storage.Ping(ctx); err != nil {
 		return fmt.Errorf("ping failed: %w", err)
 	}
@@ -204,7 +203,7 @@ func (ti *TestInstance) seedNexus(ctx context.Context, t *testing.T) error {
 		return err
 	}
 
-	if err := ti.populateNexusConfig(ctx, t); err != nil {
+	if err := ti.populateNexusConfig(ctx); err != nil {
 		return err
 	}
 
@@ -215,7 +214,14 @@ func (ti *TestInstance) insertNexusCompanyID(ctx context.Context) error {
 	return ti.storage.InsertNexusCompany(ctx, ti.nexusCompanyID, ti.connString, DBName)
 }
 
-func (ti *TestInstance) populateNexusConfig(ctx context.Context, t *testing.T) error {
+func (ti *TestInstance) populateNexusConfig(ctx context.Context) error {
+	if len(ti.nexusConfigData.Columns) > 0 {
+		data := ti.nexusConfigData.ToSeedConfig()
+
+		return ti.storage.InsertNexusConfig(ctx, &data)
+		
+	}
+
 	return nil
 }
 
@@ -289,3 +295,12 @@ func (ti *TestInstance) GetConnectionString(ctx context.Context) (string, error)
 
 // 	return nn, nil
 // }
+
+// ToSeedConfig transforms a PopulateTable into a storage.SeedConfig.
+func (p *PopulateTable) ToSeedConfig() storage.SeedConfig {
+	return storage.SeedConfig{
+		TableName: p.Name,
+		Columns:   p.Columns,
+		Data:      p.Data,
+	}
+}

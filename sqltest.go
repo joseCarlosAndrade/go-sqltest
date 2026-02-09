@@ -28,9 +28,9 @@ func WithNexus(companyId string) TestOption {
 // WithNexusConfigData provides options to populate the config table in nexus
 //
 // Use only when needed
-func WithNexusConfigData(configs ...PopulateTable) TestOption {
+func WithNexusConfigData(configs PopulateTable) TestOption {
 	return func(t *TestInstance) {
-		t.nexusConfigData = append(t.nexusConfigData, configs...)
+		t.nexusConfigData = configs
 	}
 }
 
@@ -66,9 +66,9 @@ func WithMigrationVersion(version uint) TestOption {
 //
 // Strategies accepted so far:
 //
-//   PopulateEmpty - leaves the mysql with no inserted data. Useful when testing only insertion operations
-//   PopulateDefault - will seed the database based on a default script for the configured migration version defined in TODO
-//   PopulateCustom - will seed the database using the custom options configuired int WithPopulateData()
+//	PopulateEmpty - leaves the mysql with no inserted data. Useful when testing only insertion operations
+//	PopulateDefault - will seed the database based on a default script for the configured migration version defined in TODO
+//	PopulateCustom - will seed the database using the custom options configuired int WithPopulateData()
 func WithSeedStrategy(strategy SeedStrategy) TestOption {
 	return func(t *TestInstance) {
 		t.seedStategy = strategy
@@ -77,8 +77,9 @@ func WithSeedStrategy(strategy SeedStrategy) TestOption {
 
 // WithPopulateData sets a custom seed data to populate the pricing mysql container instance
 //
-// Note: should only be used when: 
-//   WithSeedStrategy() is also set to PopulateCustom: (TODO - NOT IMPLEMENTED YET)
+// Note: should only be used when:
+//
+//	WithSeedStrategy() is also set to PopulateCustom: (TODO - NOT IMPLEMENTED YET)
 func WithPopulateData(data ...PopulateTable) TestOption {
 	return func(t *TestInstance) {
 		t.pricingPopulateData = append(t.pricingPopulateData, data...)
@@ -91,7 +92,7 @@ func NewSQLTest(ctx context.Context, configs ...TestOption) (*TestInstance, erro
 		shouldMockNexus:     false, // default: explicit false
 		shouldMockPricing:   false,
 		pricingPopulateData: make([]PopulateTable, 0),
-		nexusConfigData:     make([]PopulateTable, 0),
+		nexusConfigData:     PopulateTable{},
 		seedStategy:         PopulateEmpty,
 	}
 
