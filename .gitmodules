@@ -1,0 +1,3 @@
+[submodule "migration/pricing-client-sql-schema"]
+	path = migration/pricing-client-sql-schema
+	url = git@github.com:orasis-holding/pricing-client-sql-schema.git
