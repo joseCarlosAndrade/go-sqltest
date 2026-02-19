@@ -20,8 +20,8 @@ func test()  {
 
 	instance, err := sqltest.NewSQLTest(ctx, 
 		sqltest.WithNexus("123"),
-		sqltest.WithMigrationVersion(9),
 		sqltest.WithPricing(),
+		sqltest.WithMigrationVersion(9),
 		sqltest.WithSeedStrategy(sqltest.PopulateCustom),
 		sqltest.WithPopulateData(*populateProduct, *populateHierarchy))
 

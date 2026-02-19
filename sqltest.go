@@ -2,9 +2,7 @@ package sqltest
 
 import (
 	"context"
-	// "github.com/orasis-holding/pricing-go-swiss-army-lib/cpool"
-	// "github.com/orasis-holding/pricing-go-swiss-army-lib/nexus"
-	// mysqlcontainer "github.com/testcontainers/testcontainers-go/modules/mysql"
+
 )
 
 type TestOption func(*TestInstance)

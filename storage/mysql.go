@@ -7,6 +7,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+
 // Storage holds a MySQL client and exposes Ping and custom SQL operations.
 type Storage struct {
 	client *sql.DB
@@ -62,6 +63,15 @@ func (s *Storage) InsertNexusCompany(ctx context.Context, id, connString, dbname
 
 
 func (s *Storage) InsertNexusConfig(ctx context.Context, data *SeedConfig) error {
+	query, args := buildInsertQuery(data)
+	if query == "" {
+		return nil
+	}
+	_, err := s.client.ExecContext(ctx, query, args...)
+	return err
+}
+
+func (s *Storage) InsertPricingData(ctx context.Context, data *SeedConfig) error {
 	query, args := buildInsertQuery(data)
 	if query == "" {
 		return nil
