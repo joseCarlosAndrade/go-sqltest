@@ -1,14 +1,13 @@
-package storage
+package mysql
 
-type SeedConfig struct {
-	TableName string
-	Columns   []string
-	Data      [][]any
-}
+import (
+	"github.com/joseCarlosAndrade/go-sqltest/pkg/populate"
+)
 
 // buildInsertQuery builds a parameterized INSERT statement using ? placeholders.
 // Returns the query string and a flattened slice of values for Exec.
-func buildInsertQuery(data *SeedConfig) (query string, args []any) {
+// mysql dialect
+func buildInsertQuery(data *populate.PopulateTable) (query string, args []any) {
 	if data == nil || len(data.Columns) == 0 || len(data.Data) == 0 {
 		return "", nil
 	}
