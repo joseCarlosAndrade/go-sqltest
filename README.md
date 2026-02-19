@@ -1,4 +1,4 @@
-# SQL Test suit for SQL adapters
+# SQL Test suit for SQL adapters (wip)
 
 swiss army lib: sql-adapter-test: `sqltest`
 
